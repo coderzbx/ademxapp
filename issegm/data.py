@@ -17,7 +17,7 @@ from util.util import get_interp_method, load_image_with_cache
 
 
 def parse_split_file(dataset, split, data_root=''):
-    split_filename = 'issegm/data/{}/{}.lst'.format(dataset, split)
+    split_filename = '/opt/ademxapp/issegm/data/{}/{}.lst'.format(dataset, split)
     image_list = []
     label_list = []
     with open(split_filename) as f:
