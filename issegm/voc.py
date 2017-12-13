@@ -7,19 +7,17 @@ import re
 import sys
 import time
 from functools import partial
-from PIL import Image
 from multiprocessing import Pool
 
-import numpy as np
-
 import mxnet as mx
+import numpy as np
+from PIL import Image
 
+from data import FileIter, make_divisible, parse_split_file
 from util import mxutil
 from util import transformer as ts
 from util import util
 from util.lr_scheduler import FixedScheduler, LinearScheduler
-
-from data import FileIter, make_divisible, parse_split_file
 
 
 def parse_model_label(args):
@@ -314,6 +312,20 @@ def get_dataset_specs(args, model_specs):
             max_shape = np.array((640, 640))
         else:
             max_shape = np.array((500, 500))
+    elif dataset == 'segnet':
+        num_classes = 13
+        label_2_id = 255 * np.ones((256,))
+        valid_labels = range(num_classes)
+        #
+        ident_size = True
+        #
+        max_shape = np.array((720, 960))
+        #
+        if args.split in ('train+', 'trainval+'):
+            cache_images = False
+        #
+        if args.phase in ('val',):
+            mx_workspace = 8000
     else:
         raise NotImplementedError('Unknow dataset: {}'.format(dataset))
     
@@ -354,6 +366,7 @@ def _get_scalemeanstd():
             np.array([0.229, 0.224, 0.225]).reshape((1, 1, 3)))
     return None, None, None
 
+
 def _get_transformer_image():
     scale, mean_, std_ = _get_scalemeanstd()
     transformers = []
@@ -361,6 +374,7 @@ def _get_transformer_image():
         transformers.append(ts.ColorScale(np.single(scale)))
     transformers.append(ts.ColorNormalize(mean_, std_))
     return transformers
+
 
 def _get_module(args, margs, dargs, net=None):
     if net is None:
@@ -379,9 +393,11 @@ def _get_module(args, margs, dargs, net=None):
     mod = mx.mod.Module(net, context=contexts)
     return mod
 
+
 def _make_dirs(path):
     if not osp.isdir(path):
         os.makedirs(path)
+
 
 def _train_impl(args, model_specs, logger):
     if len(args.output) > 0:
@@ -481,6 +497,7 @@ def _interp_preds_as_impl(num_classes, im_size, pred_stride, imh, imw, pred):
         interp_pred = np.array(Image.fromarray(this_interp_pred[:imh, :imw]).resize((imw0, imh0), interp_method))
     return interp_pred
 
+
 def interp_preds_as(im_size, net_preds, pred_stride, imh, imw, threads=4):
     num_classes = net_preds.shape[0]
     worker = partial(_interp_preds_as_impl, num_classes, im_size, pred_stride, imh, imw)
@@ -491,6 +508,7 @@ def interp_preds_as(im_size, net_preds, pred_stride, imh, imw, threads=4):
         ret = pool.map(worker, net_preds)
         pool.close()
     return np.array(ret)
+
 
 class ScoreUpdater(object):
     def __init__(self, valid_labels, c_num, x_num, logger=None, label=None, info=None):
@@ -566,6 +584,7 @@ class ScoreUpdater(object):
     def overall_scores(self, logger=None):
         acc, cls_accs, ious = self.scores(None, logger)
         return acc, cls_accs.mean(), ious.mean()
+
 
 #@profile
 def _val_impl(args, model_specs, logger):

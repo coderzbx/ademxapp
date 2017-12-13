@@ -35,6 +35,7 @@ def load_params(prefix, epoch):
         symbol = mx.sym.load(symbol_path)
     return symbol, arg_params, aux_params
 
+
 def load_params_from_file(path):
     """Load model checkpoint from file."""
 
@@ -48,4 +49,3 @@ def load_params_from_file(path):
         if tp == 'aux':
             aux_params[name] = v
     return arg_params, aux_params
-

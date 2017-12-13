@@ -6,7 +6,7 @@ class FormatTrainSet:
     def __init__(self):
         return
 
-    def format(self, image_dir, label_dir, txt_dir, image_type):
+    def format(self, image_dir, label_dir, txt_dir, image_type, image_format='jpg', name_only=False):
         image_files = os.listdir(label_dir)
 
         images = []
@@ -21,8 +21,12 @@ class FormatTrainSet:
             # image_name = file_name.rstrip("_L")
             # image_name = image_name.lstrip("a-")
 
-            images.append(os.path.join(image_dir, '{}.jpg'.format(file_name)))
-            annots.append(os.path.join(label_dir, '{}.png'.format(file_name)))
+            if name_only:
+                images.append('{}.{}'.format(file_name, image_format))
+                annots.append('{}.png'.format(file_name))
+            else:
+                images.append(os.path.join(image_dir, '{}.{}'.format(file_name, image_format)))
+                annots.append(os.path.join(label_dir, '{}.png'.format(file_name)))
 
         images.sort()
         annots.sort()
@@ -40,16 +44,26 @@ class FormatTrainSet:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--image_dir', type=str, required=False)
+    parser.add_argument('--image_format', type=str, required=False)
     parser.add_argument('--annot_dir', type=str, required=False)
     parser.add_argument('--text_dir', type=str, required=False)
     args = parser.parse_args()
-
 
     handle = FormatTrainSet()
     image_dir = args.image_dir
     annot_dir = args.annot_dir
     txt_dir = args.text_dir
     image_type = 'train'
-    handle.format(image_dir=image_dir, label_dir=annot_dir, txt_dir=txt_dir, image_type=image_type)
+    image_format = 'jpg'
+    if args.image_format:
+        image_format = args.image_format
+    handle.format(
+        image_dir=image_dir,
+        label_dir=annot_dir,
+        txt_dir=txt_dir,
+        image_type=image_type,
+        image_format=image_format,
+        name_only=False
+    )
 
 
